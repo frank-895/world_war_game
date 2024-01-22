@@ -24,6 +24,25 @@ class user_plane(plane):
     def draw(self, win):
         win.blit(self.image, (self.x, self.y))
 
+class enemy_plane(plane):
+    """This class is for enemy planes"""
+    
+    image = pygame.image.load('enemy_plane.png')
+
+    def __init__(self, x, y, velocity):
+        plane.__init__(self, x, y)
+        self.velocity = velocity
+        self.visible = True
+        self.image = pygame.transform.scale(self.image, (self.width, self.height)) # change plane size
+
+    def draw(self, win):
+        self.move()
+        win.blit(self.image, (self.x, self.y))
+
+    def move(self):
+        if self.x > self.velocity:
+            self.x -= self.velocity
+
 class projectile(object):
     """Class for all projectiles"""
     def __init__(self, x, y):
@@ -44,11 +63,18 @@ class bomb(projectile):
     """Class for bombs dropped by aircraft"""
     pass
 
-
-
 def redraw_game_window():
     """This function redraws the game window between every frame"""
+    global scroll
+    for i in range(panels):
+        win.blit(bg, (i * bg_width + scroll - bg_width, 0))
+    
+    scroll -= 5
+    if abs(scroll) > bg_width:
+        scroll = 0
+
     main_plane.draw(win)
+    enemy1.draw(win)
     for bullet in bullets:
         bullet.draw(win)
     pygame.display.update()
@@ -67,16 +93,13 @@ bg_rect = bg.get_rect()
 scroll = 0
 panels = math.ceil(screen_x / bg_width) + 2
 
-
+enemy1 = enemy_plane(1900, 400, 3)
 main_plane = user_plane(100, 100, 10)
 bullets = []
 bullet_limit = 0
 run = True # main loop
 while run:
     clock.tick(27) # frame rate
-
-    for i in range(panels):
-        win.blit(bg, (i * bg_width + scroll - bg_width, 0))
 
     if bullet_limit > 0:
         bullet_limit += 1
@@ -112,9 +135,7 @@ while run:
         bullets.append(bullet(round(main_plane.x + main_plane.width), round(main_plane.y + main_plane.height//2)))
         bullet_limit = 1
     
-    scroll -= 5
-    if abs(scroll) > bg_width:
-        scroll = 0
+
     redraw_game_window()
 
 pygame.quit() # closes program once broken out of while loop
