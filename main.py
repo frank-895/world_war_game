@@ -23,11 +23,34 @@ class user_plane(plane):
     def draw(self, win):
         win.blit(self.image, (self.x, self.y))
 
+class projectile(object):
+    """Class for all projectiles"""
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def draw(self, win):
+        pygame.draw.circle(win, (0,0,0), (self.x, self.y), self.radius)
+
+class bullet(projectile):
+    """Class for bullets shot from aircraft"""
+    def __init__(self, x, y):
+        projectile.__init__(self, x, y)
+        self.radius = 6
+        self.velocity = 8
+
+class bomb(projectile):
+    """Class for bombs dropped by aircraft"""
+    pass
+
+
 
 def redraw_game_window():
     """This function redraws the game window between every frame"""
     win.blit(bg, (0,0))
     main_plane.draw(win)
+    for bullet in bullets:
+        bullet.draw(win)
     pygame.display.update()
 
 pygame.init()
@@ -39,26 +62,46 @@ clock = pygame.time.Clock()
 bg = pygame.image.load('bg.jpg')
 bg = pygame.transform.scale(bg, (screen_x, screen_y))
 
-main_plane = user_plane(100, 100, 20)
+main_plane = user_plane(100, 100, 10)
+bullets = []
+bullet_limit = 0
 run = True # main loop
 while run:
     clock.tick(27) # frame rate
+
+    if bullet_limit > 0:
+        bullet_limit += 1
+    if bullet_limit > 5:
+        bullet_limit = 0
 
     for event in pygame.event.get(): # check for event
         if event.type == pygame.QUIT: # if user closes window
             run = False
 
+    for i in bullets:
+        if i.x < screen_x and i.x > 0: # cheeck bullet on screen
+            i.x += i.velocity # move the bullet
+        else:
+            bullets.pop(bullets.index(i))
+
+    # For left and right movement of user controlled plane
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT] and main_plane.x > 0:
         main_plane.x -= main_plane.velocity
     elif keys[pygame.K_RIGHT] and main_plane.x < screen_x - main_plane.width:
         main_plane.x += main_plane.velocity
     
+    # For up and down movement of user controlled plane
     keys = pygame.key.get_pressed()
     if keys[pygame.K_UP] and main_plane.y > 0:
         main_plane.y -= main_plane.velocity
     elif keys[pygame.K_DOWN] and main_plane.y < screen_y - main_plane.height:
         main_plane.y += main_plane.velocity
+
+    # For bullet firing of user controlled plane
+    if keys[pygame.K_SPACE] and bullet_limit == 0:
+        bullets.append(bullet(round(main_plane.x + main_plane.width), round(main_plane.y + main_plane.height//2)))
+        bullet_limit = 1
     
     redraw_game_window()
 
