@@ -1,5 +1,6 @@
 import pygame
 import math
+import random
 
 class plane(object):
     """This class is for all of the planes in the game"""
@@ -74,7 +75,8 @@ def redraw_game_window():
         scroll = 0
 
     main_plane.draw(win)
-    enemy1.draw(win)
+    for enemy in enemies:
+        enemy.draw(win)
     for bullet in bullets:
         bullet.draw(win)
     pygame.display.update()
@@ -93,13 +95,19 @@ bg_rect = bg.get_rect()
 scroll = 0
 panels = math.ceil(screen_x / bg_width) + 2
 
-enemy1 = enemy_plane(1900, 400, 3)
+enemies = []
 main_plane = user_plane(100, 100, 10)
 bullets = []
 bullet_limit = 0
+enemy_timer = 50
 run = True # main loop
 while run:
     clock.tick(27) # frame rate
+
+    enemy_timer -= 1
+    if enemy_timer == 0:
+        enemies.append(enemy_plane(screen_x, random.randint(0, 600), 3))
+        enemy_timer = 50
 
     if bullet_limit > 0:
         bullet_limit += 1
