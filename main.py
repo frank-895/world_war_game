@@ -106,8 +106,9 @@ while run:
 
     enemy_timer -= 1
     if enemy_timer == 0:
-        enemies.append(enemy_plane(screen_x, random.randint(0, 600), 3))
-        enemy_timer = 50
+        if len(enemies) < 10:
+            enemies.append(enemy_plane(screen_x, random.randint(0, 600), 3))
+            enemy_timer = 50    
 
     if bullet_limit > 0:
         bullet_limit += 1
