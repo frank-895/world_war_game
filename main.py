@@ -1,4 +1,5 @@
 import pygame
+import math
 
 class plane(object):
     """This class is for all of the planes in the game"""
@@ -47,7 +48,6 @@ class bomb(projectile):
 
 def redraw_game_window():
     """This function redraws the game window between every frame"""
-    win.blit(bg, (0,0))
     main_plane.draw(win)
     for bullet in bullets:
         bullet.draw(win)
@@ -55,12 +55,18 @@ def redraw_game_window():
 
 pygame.init()
 screen_x = 2000
-screen_y = 1100
+screen_y = 800
 win = pygame.display.set_mode((screen_x, screen_y)) # creating window
 pygame.display.set_caption("World War Game") # creating title
 clock = pygame.time.Clock() 
-bg = pygame.image.load('bg.jpg')
-bg = pygame.transform.scale(bg, (screen_x, screen_y))
+bg = pygame.image.load('inf_background.jpg')
+bg_width = bg.get_width()
+bg = pygame.transform.scale(bg, (bg_width, screen_y))
+bg_rect = bg.get_rect()
+
+scroll = 0
+panels = math.ceil(screen_x / bg_width) + 2
+
 
 main_plane = user_plane(100, 100, 10)
 bullets = []
@@ -68,6 +74,9 @@ bullet_limit = 0
 run = True # main loop
 while run:
     clock.tick(27) # frame rate
+
+    for i in range(panels):
+        win.blit(bg, (i * bg_width + scroll - bg_width, 0))
 
     if bullet_limit > 0:
         bullet_limit += 1
@@ -103,6 +112,9 @@ while run:
         bullets.append(bullet(round(main_plane.x + main_plane.width), round(main_plane.y + main_plane.height//2)))
         bullet_limit = 1
     
+    scroll -= 5
+    if abs(scroll) > bg_width:
+        scroll = 0
     redraw_game_window()
 
 pygame.quit() # closes program once broken out of while loop
