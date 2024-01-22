@@ -26,15 +26,18 @@ class user_plane(plane):
 
 def redraw_game_window():
     """This function redraws the game window between every frame"""
+    win.blit(bg, (0,0))
     main_plane.draw(win)
     pygame.display.update()
 
 pygame.init()
-screen_x = 1500
+screen_x = 2000
 screen_y = 1100
 win = pygame.display.set_mode((screen_x, screen_y)) # creating window
 pygame.display.set_caption("World War Game") # creating title
 clock = pygame.time.Clock() 
+bg = pygame.image.load('bg.jpg')
+bg = pygame.transform.scale(bg, (screen_x, screen_y))
 
 main_plane = user_plane(100, 100, 20)
 run = True # main loop
