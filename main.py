@@ -22,6 +22,8 @@ class user_plane(plane):
         self.velocity = velocity
         self.image = pygame.transform.scale(self.image, (self.width, self.height)) # change plane size
         self.image = pygame.transform.flip(self.image, True, False) # flip image
+        self.health = 5
+        self.lives = 3
 
     def draw(self, win):
         win.blit(self.image, (self.x, self.y))
@@ -42,14 +44,13 @@ class enemy_plane(plane):
 
     def draw(self, win):
         self.move()
-        if self.visible:
-            win.blit(self.image, (self.x, self.y))
-            self.hitbox = (self.x, self.y, 150, 52)
-            pygame.draw.rect(win, (255,0,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2], 10)) # health bar
-            pygame.draw.rect(win, (0,128,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2] - ((self.hitbox[2]/5) * (5 - self.health)), 10)) 
+        win.blit(self.image, (self.x, self.y))
+        self.hitbox = (self.x, self.y, 150, 52)
+        pygame.draw.rect(win, (255,0,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2], 10)) # health bar
+        pygame.draw.rect(win, (0,128,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2] - ((self.hitbox[2]/5) * (5 - self.health)), 10)) 
 
     def hit(self):
-        if self.health > 0:
+        if self.health > 1:
             self.health -= 1
         else:
             self.visible = False   
@@ -57,6 +58,9 @@ class enemy_plane(plane):
     def move(self):
         if self.x > -self.width:
             self.x -= self.velocity
+        else:
+            self.visible = False
+            pass # the plane must have made it to the edge of screen - hence game over.
 
 class projectile(object):
     """Class for all projectiles"""
@@ -69,10 +73,11 @@ class projectile(object):
 
 class bullet(projectile):
     """Class for bullets shot from aircraft"""
-    def __init__(self, x, y):
+    def __init__(self, x, y, direction=1):
         projectile.__init__(self, x, y)
+        self.direction = direction
         self.radius = 6
-        self.velocity = 15
+        self.velocity = 15 * self.direction
 
 class bomb(projectile):
     """Class for bombs dropped by aircraft"""
@@ -101,10 +106,12 @@ def redraw_game_window():
             if is_hit(enemy, bullet):
                 bullets.pop(bullets.index(bullet))
                 enemy.hit()
-                if not enemy.visible:
-                    enemies.pop(enemies.index(enemy))
+        if enemy.visible == False:
+            enemies.pop(enemies.index(enemy))
     
     for bullet in bullets:
+        bullet.draw(win)
+    for bullet in enemy_bullets:
         bullet.draw(win)
 
     pygame.display.update()
@@ -126,6 +133,7 @@ panels = math.ceil(screen_x / bg_width) + 2
 enemies = []
 main_plane = user_plane(100, 100, 10)
 bullets = []
+enemy_bullets = []
 bullet_limit = 0
 enemy_timer = 50
 run = True # main loop
@@ -136,7 +144,11 @@ while run:
     if enemy_timer == 0:
         if len(enemies) < 10:
             enemies.append(enemy_plane(screen_x, random.randint(50, 600), 3))
-            enemy_timer = 50    
+        enemy_timer = 50
+
+    for enemy in enemies:
+        if random.randint(0, 30) == 5:
+            enemy_bullets.append(bullet(round(enemy.x + enemy.width), round(enemy.y + enemy.height//2), -1))
 
     if bullet_limit > 0:
         bullet_limit += 1
@@ -152,6 +164,12 @@ while run:
             i.x += i.velocity # move the bullet
         else:
             bullets.pop(bullets.index(i))
+
+    for i in enemy_bullets:
+        if i.x < screen_x and i.x > 0: # cheeck bullet on screen
+            i.x += i.velocity # move the bullet
+        else:
+            enemy_bullets.pop(enemy_bullets.index(i))
 
     # For left and right movement of user controlled plane
     keys = pygame.key.get_pressed()
