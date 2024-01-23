@@ -50,14 +50,21 @@ class user_plane(plane):
                 return True 
             
     def is_collide(self, enemy):
-        """This method determines if the user controlled plane has collided with an enemy plane"""
+        """This method determines if the user controlled plane has collided with an enemy plane or the ground"""
         if self.hitbox[0] < enemy.hitbox[0] + enemy.hitbox[2]:
             if self.hitbox[0] + self.hitbox[2] > enemy.hitbox[0]:
                 if self.hitbox[1] < enemy.hitbox[1] + enemy.hitbox[3]:
                     if self.hitbox[1] + self.hitbox[3] > enemy.hitbox[1]:
                         self.lost_life()
-                        if self.lives == 0:
-                            self.no_lives()
+        if self.lives == 0:
+            self.no_lives()
+    
+    def hit_ground(self):
+        """This method determines if the user controlled plane has hit the ground."""
+        if self.hitbox[1] + self.hitbox[3] > 700:
+            self.lost_life()
+            if self.lives == 0:
+                self.no_lives()
 
     def lost_life(self):
         self.x = self.y = 100
@@ -65,8 +72,8 @@ class user_plane(plane):
         self.health = 10
 
     def no_lives(self):
-        print("GAME OVER")
-
+        pass
+    
 class enemy_plane(plane):
     """This class is for enemy planes"""
     
@@ -190,6 +197,8 @@ run = True
 # main loop
 while run:
     clock.tick(27) # frame rate
+
+    main_plane.hit_ground() # check if plane has hit ground each time
 
     enemy_timer -= 1
     if enemy_timer == 0:
