@@ -18,6 +18,8 @@ class user_plane(plane):
     image = pygame.image.load('user_plane.png') # upload main fighter
     heart = pygame.image.load('heart.png') # hearts for lives
     heart = pygame.transform.scale(heart, (30, 30))
+    explosion = pygame.image.load('explosion.png')
+    explosion = pygame.transform.scale(explosion , (300,300))
 
     def __init__(self, x, y, velocity):
         plane.__init__(self, x, y) # call superclass init method
@@ -26,6 +28,7 @@ class user_plane(plane):
         self.image = pygame.transform.flip(self.image, True, False) # flip image
         self.health = 10
         self.lives = 3
+        self.visible = True
 
     def draw(self, win):
         win.blit(self.image, (self.x, self.y))
@@ -36,17 +39,33 @@ class user_plane(plane):
             win.blit(self.heart, (screen_x - 50 - i * 50, 10)) 
 
     def is_hit(self, bullet):
-     """This function determines if the user controlled plane has been hit by a bullet. It removes health and lives if necessary and returns True if user plane is hit"""
-     if bullet.x > self.hitbox[0] and bullet.x < self.hitbox[0] + self.hitbox[2]:
+        """This function determines if the user controlled plane has been hit by a bullet. It removes health and lives if necessary and returns True if user plane is hit"""
+        if bullet.x > self.hitbox[0] and bullet.x < self.hitbox[0] + self.hitbox[2]:
             if bullet.y < self.hitbox[1] + self.hitbox[3] and bullet.y > self.hitbox[1]:
                 self.health -= 1
                 if self.health == 0:
-                    self.lives -= 1 
-                    self.health = 10 
+                    self.lost_life()
                     if self.lives == 0:
-                        print("GAME OVER")
-                        ### THIS IS WHERE WE WILL ACTIVATE SOME KIND OF FUNCTION THAT PRINTS THE END GAME MESSAGE    
+                        self.no_lives()
                 return True 
+            
+    def is_collide(self, enemy):
+        """This method determines if the user controlled plane has collided with an enemy plane"""
+        if self.hitbox[0] < enemy.hitbox[0] + enemy.hitbox[2]:
+            if self.hitbox[0] + self.hitbox[2] > enemy.hitbox[0]:
+                if self.hitbox[1] < enemy.hitbox[1] + enemy.hitbox[3]:
+                    if self.hitbox[1] + self.hitbox[3] > enemy.hitbox[1]:
+                        self.lost_life()
+                        if self.lives == 0:
+                            self.no_lives()
+
+    def lost_life(self):
+        self.x = self.y = 100
+        self.lives -= 1
+        self.health = 10
+
+    def no_lives(self):
+        print("GAME OVER")
 
 class enemy_plane(plane):
     """This class is for enemy planes"""
@@ -118,10 +137,12 @@ def redraw_game_window():
     if abs(scroll) > bg_width:
         scroll = 0
 
-    main_plane.draw(win)
+    if main_plane.visible:
+        main_plane.draw(win)
     
     for enemy in enemies:
         enemy.draw(win)
+        main_plane.is_collide(enemy)
         for bullet in bullets:
             if is_hit(enemy, bullet):
                 bullets.pop(bullets.index(bullet))
@@ -137,6 +158,12 @@ def redraw_game_window():
             enemy_bullets.pop(enemy_bullets.index(bullet))
 
     pygame.display.update()
+
+def game_over():
+    pass
+
+def respawn():
+    pass
 
 pygame.init()
 screen_x = 2000
@@ -158,7 +185,9 @@ bullets = []
 enemy_bullets = []
 bullet_limit = 0
 enemy_timer = 50
-run = True # main loop
+run = True 
+
+# main loop
 while run:
     clock.tick(27) # frame rate
 
