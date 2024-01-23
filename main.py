@@ -10,6 +10,7 @@ class plane(object):
         self.y = y
         self.width = 150
         self.height = 52
+        self.hitbox = (self.x, self.y, 150, 52)
 
 class user_plane(plane):
     """This class is specifically for the user controlled plane"""
@@ -24,6 +25,7 @@ class user_plane(plane):
 
     def draw(self, win):
         win.blit(self.image, (self.x, self.y))
+        self.hitbox = (self.x, self.y, 150, 52)
 
 class enemy_plane(plane):
     """This class is for enemy planes"""
@@ -35,13 +37,25 @@ class enemy_plane(plane):
         self.velocity = velocity
         self.visible = True
         self.image = pygame.transform.scale(self.image, (self.width, self.height)) # change plane size
+        self.health = 5
+        self.visible = True
 
     def draw(self, win):
         self.move()
-        win.blit(self.image, (self.x, self.y))
+        if self.visible:
+            win.blit(self.image, (self.x, self.y))
+            self.hitbox = (self.x, self.y, 150, 52)
+            pygame.draw.rect(win, (255,0,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2], 10)) # health bar
+            pygame.draw.rect(win, (0,128,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2] - ((self.hitbox[2]/5) * (5 - self.health)), 10)) 
+
+    def hit(self):
+        if self.health > 0:
+            self.health -= 1
+        else:
+            self.visible = False   
 
     def move(self):
-        if self.x > self.velocity:
+        if self.x > -self.width:
             self.x -= self.velocity
 
 class projectile(object):
@@ -58,11 +72,16 @@ class bullet(projectile):
     def __init__(self, x, y):
         projectile.__init__(self, x, y)
         self.radius = 6
-        self.velocity = 8
+        self.velocity = 15
 
 class bomb(projectile):
     """Class for bombs dropped by aircraft"""
     pass
+
+def is_hit(enemy, bullet):
+    if bullet.x > enemy.hitbox[0] and bullet.x < enemy.hitbox[0] + enemy.hitbox[2]:
+        if bullet.y < enemy.hitbox[1] + enemy.hitbox[3] and bullet.y > enemy.hitbox[1]:
+            return True 
 
 def redraw_game_window():
     """This function redraws the game window between every frame"""
@@ -75,10 +94,19 @@ def redraw_game_window():
         scroll = 0
 
     main_plane.draw(win)
+    
     for enemy in enemies:
         enemy.draw(win)
+        for bullet in bullets:
+            if is_hit(enemy, bullet):
+                bullets.pop(bullets.index(bullet))
+                enemy.hit()
+                if not enemy.visible:
+                    enemies.pop(enemies.index(enemy))
+    
     for bullet in bullets:
         bullet.draw(win)
+
     pygame.display.update()
 
 pygame.init()
