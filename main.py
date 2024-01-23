@@ -29,6 +29,7 @@ class user_plane(plane):
         self.health = 10
         self.lives = 3
         self.visible = True
+        self.gameover = False
 
     def draw(self, win):
         win.blit(self.image, (self.x, self.y))
@@ -46,7 +47,7 @@ class user_plane(plane):
                 if self.health == 0:
                     self.lost_life()
                     if self.lives == 0:
-                        self.no_lives()
+                        self.no_lives(win)
                 return True 
             
     def is_collide(self, enemy):
@@ -57,23 +58,25 @@ class user_plane(plane):
                     if self.hitbox[1] + self.hitbox[3] > enemy.hitbox[1]:
                         self.lost_life()
         if self.lives == 0:
-            self.no_lives()
+            self.no_lives(win)
     
     def hit_ground(self):
         """This method determines if the user controlled plane has hit the ground."""
         if self.hitbox[1] + self.hitbox[3] > 700:
             self.lost_life()
             if self.lives == 0:
-                self.no_lives()
+                self.no_lives(win)
 
     def lost_life(self):
         self.x = self.y = 100
         self.lives -= 1
         self.health = 10
 
-    def no_lives(self):
-        pass
-    
+    def no_lives(self, win):
+        win.fill((0,0,0))
+        self.gameover = True
+
+
 class enemy_plane(plane):
     """This class is for enemy planes"""
     
@@ -166,12 +169,6 @@ def redraw_game_window():
 
     pygame.display.update()
 
-def game_over():
-    pass
-
-def respawn():
-    pass
-
 pygame.init()
 screen_x = 2000
 screen_y = 800
@@ -193,64 +190,78 @@ enemy_bullets = []
 bullet_limit = 0
 enemy_timer = 50
 run = True 
+score = 0
+level1 = True
 
 # main loop
 while run:
-    clock.tick(27) # frame rate
+    
 
-    main_plane.hit_ground() # check if plane has hit ground each time
+    while level1: 
+        clock.tick(27) # frame rate
+        main_plane.hit_ground() # check if plane has hit ground each time
 
-    enemy_timer -= 1
-    if enemy_timer == 0:
-        if len(enemies) < 10:
-            enemies.append(enemy_plane(screen_x, random.randint(50, 600), 3))
-        enemy_timer = 50
+        enemy_timer -= 1
+        if enemy_timer == 0:
+            if len(enemies) < 10:
+                enemies.append(enemy_plane(screen_x, random.randint(50, 600), 3))
+            enemy_timer = 50
 
-    for enemy in enemies:
-        if random.randint(0, 30) == 5:
-            enemy_bullets.append(bullet(round(enemy.x + enemy.width), round(enemy.y + enemy.height//2), -1))
+        for enemy in enemies:
+            if random.randint(0, 30) == 5:
+                enemy_bullets.append(bullet(round(enemy.x + enemy.width), round(enemy.y + enemy.height//2), -1))
 
-    if bullet_limit > 0:
-        bullet_limit += 1
-    if bullet_limit > 5:
-        bullet_limit = 0
+        if bullet_limit > 0:
+            bullet_limit += 1
+        if bullet_limit > 5:
+            bullet_limit = 0
 
+        for event in pygame.event.get(): # check for event
+            if event.type == pygame.QUIT: # if user closes window
+                run = False
+
+        for i in bullets:
+            if i.x < screen_x and i.x > 0: # cheeck bullet on screen
+                i.x += i.velocity # move the bullet
+            else:
+                bullets.pop(bullets.index(i))
+
+        for i in enemy_bullets:
+            if i.x < screen_x and i.x > 0: # cheeck bullet on screen
+                i.x += i.velocity # move the bullet
+            else:
+                enemy_bullets.pop(enemy_bullets.index(i))
+
+        # For left and right movement of user controlled plane
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] and main_plane.x > 0:
+            main_plane.x -= main_plane.velocity
+        elif keys[pygame.K_RIGHT] and main_plane.x < screen_x - main_plane.width:
+            main_plane.x += main_plane.velocity
+        
+        # For up and down movement of user controlled plane
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP] and main_plane.y > 0:
+            main_plane.y -= main_plane.velocity
+        elif keys[pygame.K_DOWN] and main_plane.y < screen_y - main_plane.height:
+            main_plane.y += main_plane.velocity
+
+        # For bullet firing of user controlled plane
+        if keys[pygame.K_SPACE] and bullet_limit == 0:
+            bullets.append(bullet(round(main_plane.x + main_plane.width), round(main_plane.y + main_plane.height//2)))
+            bullet_limit = 1
+
+        if score == 10:
+            level1 = False
+
+        if main_plane.gameover == True:
+            level1 = False
+        redraw_game_window()
+    
+    print("We BROKE out of first while loop!")
     for event in pygame.event.get(): # check for event
-        if event.type == pygame.QUIT: # if user closes window
-            run = False
-
-    for i in bullets:
-        if i.x < screen_x and i.x > 0: # cheeck bullet on screen
-            i.x += i.velocity # move the bullet
-        else:
-            bullets.pop(bullets.index(i))
-
-    for i in enemy_bullets:
-        if i.x < screen_x and i.x > 0: # cheeck bullet on screen
-            i.x += i.velocity # move the bullet
-        else:
-            enemy_bullets.pop(enemy_bullets.index(i))
-
-    # For left and right movement of user controlled plane
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT] and main_plane.x > 0:
-        main_plane.x -= main_plane.velocity
-    elif keys[pygame.K_RIGHT] and main_plane.x < screen_x - main_plane.width:
-        main_plane.x += main_plane.velocity
-    
-    # For up and down movement of user controlled plane
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_UP] and main_plane.y > 0:
-        main_plane.y -= main_plane.velocity
-    elif keys[pygame.K_DOWN] and main_plane.y < screen_y - main_plane.height:
-        main_plane.y += main_plane.velocity
-
-    # For bullet firing of user controlled plane
-    if keys[pygame.K_SPACE] and bullet_limit == 0:
-        bullets.append(bullet(round(main_plane.x + main_plane.width), round(main_plane.y + main_plane.height//2)))
-        bullet_limit = 1
-    
-
-    redraw_game_window()
+            if event.type == pygame.QUIT: # if user closes window
+                run = False
+    run = False
 
 pygame.quit() # closes program once broken out of while loop
