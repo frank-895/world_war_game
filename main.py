@@ -16,24 +16,43 @@ class user_plane(plane):
     """This class is specifically for the user controlled plane"""
 
     image = pygame.image.load('user_plane.png') # upload main fighter
+    heart = pygame.image.load('heart.png') # hearts for lives
+    heart = pygame.transform.scale(heart, (30, 30))
 
     def __init__(self, x, y, velocity):
         plane.__init__(self, x, y) # call superclass init method
         self.velocity = velocity
         self.image = pygame.transform.scale(self.image, (self.width, self.height)) # change plane size
         self.image = pygame.transform.flip(self.image, True, False) # flip image
-        self.health = 5
+        self.health = 10
         self.lives = 3
 
     def draw(self, win):
         win.blit(self.image, (self.x, self.y))
         self.hitbox = (self.x, self.y, 150, 52)
+        pygame.draw.rect(win, (255,0,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2], 10)) # health bar
+        pygame.draw.rect(win, (0,128,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2] - ((self.hitbox[2]/10) * (10 - self.health)), 10))
+        for i in range(self.lives):
+            win.blit(self.heart, (screen_x - 50 - i * 50, 10)) 
+
+    def is_hit(self, bullet):
+     """This function determines if the user controlled plane has been hit by a bullet. It removes health and lives if necessary and returns True if user plane is hit"""
+     if bullet.x > self.hitbox[0] and bullet.x < self.hitbox[0] + self.hitbox[2]:
+            if bullet.y < self.hitbox[1] + self.hitbox[3] and bullet.y > self.hitbox[1]:
+                self.health -= 1
+                if self.health == 0:
+                    self.lives -= 1 
+                    self.health = 10 
+                    if self.lives == 0:
+                        print("GAME OVER")
+                        ### THIS IS WHERE WE WILL ACTIVATE SOME KIND OF FUNCTION THAT PRINTS THE END GAME MESSAGE    
+                return True 
 
 class enemy_plane(plane):
     """This class is for enemy planes"""
     
     image = pygame.image.load('enemy_plane.png')
-
+    
     def __init__(self, x, y, velocity):
         plane.__init__(self, x, y)
         self.velocity = velocity
@@ -84,6 +103,7 @@ class bomb(projectile):
     pass
 
 def is_hit(enemy, bullet):
+    """This function determines if a particular bullet has hit a particular enemy plane"""
     if bullet.x > enemy.hitbox[0] and bullet.x < enemy.hitbox[0] + enemy.hitbox[2]:
         if bullet.y < enemy.hitbox[1] + enemy.hitbox[3] and bullet.y > enemy.hitbox[1]:
             return True 
@@ -113,6 +133,8 @@ def redraw_game_window():
         bullet.draw(win)
     for bullet in enemy_bullets:
         bullet.draw(win)
+        if main_plane.is_hit(bullet):
+            enemy_bullets.pop(enemy_bullets.index(bullet))
 
     pygame.display.update()
 
