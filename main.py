@@ -223,6 +223,16 @@ def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit):
 
     return bullet_limit
 
+def move_bullets(bullets):
+    for i in bullets:
+        if i.x < screen_x and i.x > 0: # cheeck bullet on screen
+            i.x += i.velocity # move the bullet
+        else:
+            bullets.pop(bullets.index(i))
+    return bullets
+
+
+
 pygame.init()
 screen_x = 2000
 screen_y = 800
@@ -275,18 +285,8 @@ while run:
             if random.randint(0, 50) == 25:
                 enemy_bullets.append(bullet(round(enemy.x + enemy.width), round(enemy.y + enemy.height//2), -1))
 
-        for i in bullets:
-            if i.x < screen_x and i.x > 0: # cheeck bullet on screen
-                i.x += i.velocity # move the bullet
-            else:
-                bullets.pop(bullets.index(i))
-
-        for i in enemy_bullets:
-            if i.x < screen_x and i.x > 0: # cheeck bullet on screen
-                i.x += i.velocity # move the bullet
-            else:
-                enemy_bullets.pop(enemy_bullets.index(i))
-        
+        bullets = move_bullets(bullets)
+        enemy_bullets = move_bullets(enemy_bullets)
         bullet_limit = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit)
 
         if score == 10:
