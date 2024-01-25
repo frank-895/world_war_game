@@ -181,8 +181,8 @@ def every_level():
 
 def message(mess, pos):
     """This function is welcome message for each level"""
-    global intromessage
-    intromessage = every_level()
+    global run, intromessage
+    run = every_level()
     keys = pygame.key.get_pressed()
     if keys[pygame.K_SPACE]:
         intromessage = False
@@ -196,6 +196,32 @@ def message(mess, pos):
     win.blit(text2, (800, 450))
     pygame.display.update()
 
+def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit):
+    if bullet_limit > 0:
+        bullet_limit += 1
+    if bullet_limit > 5:
+        bullet_limit = 0
+        
+    # For left and right movement of user controlled plane
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT] and main_plane.x > 0:
+        main_plane.x -= main_plane.velocity
+    elif keys[pygame.K_RIGHT] and main_plane.x < screen_x - main_plane.width:
+        main_plane.x += main_plane.velocity
+        
+    # For up and down movement of user controlled plane
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_UP] and main_plane.y > 0:
+        main_plane.y -= main_plane.velocity
+    elif keys[pygame.K_DOWN] and main_plane.y < screen_y - main_plane.height:
+        main_plane.y += main_plane.velocity
+
+    # For bullet firing of user controlled plane
+    if keys[pygame.K_SPACE] and bullet_limit == 0:
+        bullets.append(bullet(round(main_plane.x + main_plane.width), round(main_plane.y + main_plane.height//2)))
+        bullet_limit = 1
+
+    return bullet_limit
 
 pygame.init()
 screen_x = 2000
@@ -234,7 +260,7 @@ while run:
         run = every_level()  
 
         # INTROMESSAGE
-        while intromessage:
+        while intromessage and level1 and run:
             message("You are defending your airspace alone. You must destroy 10 planes to continue to the next level! Don't let any planes get past!",50)
 
         main_plane.hit_ground() # check if plane has hit ground each time
@@ -249,11 +275,6 @@ while run:
             if random.randint(0, 50) == 25:
                 enemy_bullets.append(bullet(round(enemy.x + enemy.width), round(enemy.y + enemy.height//2), -1))
 
-        if bullet_limit > 0:
-            bullet_limit += 1
-        if bullet_limit > 5:
-            bullet_limit = 0
-
         for i in bullets:
             if i.x < screen_x and i.x > 0: # cheeck bullet on screen
                 i.x += i.velocity # move the bullet
@@ -265,25 +286,8 @@ while run:
                 i.x += i.velocity # move the bullet
             else:
                 enemy_bullets.pop(enemy_bullets.index(i))
-
-        # For left and right movement of user controlled plane
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT] and main_plane.x > 0:
-            main_plane.x -= main_plane.velocity
-        elif keys[pygame.K_RIGHT] and main_plane.x < screen_x - main_plane.width:
-            main_plane.x += main_plane.velocity
         
-        # For up and down movement of user controlled plane
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_UP] and main_plane.y > 0:
-            main_plane.y -= main_plane.velocity
-        elif keys[pygame.K_DOWN] and main_plane.y < screen_y - main_plane.height:
-            main_plane.y += main_plane.velocity
-
-        # For bullet firing of user controlled plane
-        if keys[pygame.K_SPACE] and bullet_limit == 0:
-            bullets.append(bullet(round(main_plane.x + main_plane.width), round(main_plane.y + main_plane.height//2)))
-            bullet_limit = 1
+        bullet_limit = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit)
 
         if score == 10:
             level1 = False
