@@ -231,6 +231,17 @@ def move_bullets(bullets):
             bullets.pop(bullets.index(i))
     return bullets
 
+def produce_enemy():
+    global enemy_timer, enemies, enemy_bullets, screen_x
+    enemy_timer -= 1
+    if enemy_timer == 0:
+        if len(enemies) < 10:
+            enemies.append(enemy_plane(screen_x, random.randint(50, 600), 3))
+        enemy_timer = 50
+
+    for enemy in enemies:
+        if random.randint(0, 50) == 25:
+            enemy_bullets.append(bullet(round(enemy.x + enemy.width), round(enemy.y + enemy.height//2), -1))
 
 
 pygame.init()
@@ -275,15 +286,7 @@ while run:
 
         main_plane.hit_ground() # check if plane has hit ground each time
 
-        enemy_timer -= 1
-        if enemy_timer == 0:
-            if len(enemies) < 10:
-                enemies.append(enemy_plane(screen_x, random.randint(50, 600), 3))
-            enemy_timer = 50
-
-        for enemy in enemies:
-            if random.randint(0, 50) == 25:
-                enemy_bullets.append(bullet(round(enemy.x + enemy.width), round(enemy.y + enemy.height//2), -1))
+        produce_enemy()
 
         bullets = move_bullets(bullets)
         enemy_bullets = move_bullets(enemy_bullets)
