@@ -184,7 +184,7 @@ def message(mess, pos):
     global run, intromessage
     run = every_level()
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_SPACE]:
+    if keys[pygame.K_w]:
         intromessage = False
     for i in range(panels):
         win.blit(bg, (i * bg_width - bg_width, 0))
@@ -244,6 +244,7 @@ def produce_enemy():
             enemy_bullets.append(bullet(round(enemy.x + enemy.width), round(enemy.y + enemy.height//2), -1))
 
 
+
 pygame.init()
 screen_x = 2000
 screen_y = 800
@@ -285,9 +286,42 @@ while run:
             message("You are defending your airspace alone. You must destroy 10 planes to continue to the next level! Don't let any planes get past!",50)
 
         main_plane.hit_ground() # check if plane has hit ground each time
-
         produce_enemy()
+        bullets = move_bullets(bullets)
+        enemy_bullets = move_bullets(enemy_bullets)
+        bullet_limit = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit)
 
+        if score == 2:
+            level1 = False
+
+        if main_plane.gameover == True:
+            level1 = False
+            level2 = False
+        
+        score = redraw_game_window(score)
+
+    set_up_variables()
+    enemies = []
+    bullets = []
+    enemy_bullets = []
+    bullet_limit = 0
+    enemy_timer = 50
+    score = 0
+    main_plane.x = 100
+    main_plane.y = 100
+    main_plane.health = 10
+    main_plane.lives = 3
+    intromessage = True
+
+    while level2 and run:
+        run = every_level()
+
+        # INTROMESSAGE
+        while intromessage and level2 and run:
+            message("Congratulations you made it to the next stage. Destroy both planes and tanks to continue to the next level. Good luck!",100)
+
+        main_plane.hit_ground() # check if plane has hit ground each time
+        produce_enemy()
         bullets = move_bullets(bullets)
         enemy_bullets = move_bullets(enemy_bullets)
         bullet_limit = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit)
@@ -300,25 +334,6 @@ while run:
             level2 = False
         
         score = redraw_game_window(score)
-
-    while level2 and run:
-        run = every_level()
-        intromessage = True
-        while intromessage:
-            intromessage = every_level()
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_SPACE]:
-                intromessage = False
-            for i in range(panels):
-                win.blit(bg, (i * bg_width - bg_width, 0))
-            win.blit(bg, (0,0))
-
-            text1 = font.render("Congratulations! You made it past the first stage of the game.", True, (0,0,0))
-            text2 = font.render("Press space to continue", True, (0,0,0))
-            win.blit(text1, (600, 350))
-            win.blit(text2, (800, 450))
-            
-            pygame.display.update()
     
     run = False
 
