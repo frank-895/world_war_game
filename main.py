@@ -11,7 +11,7 @@ class plane(object):
         self.y = y
         self.width = 150
         self.height = 52
-        self.hitbox = (self.x, self.y, 150, 52)
+        self.hitbox = (self.x, self.y, self.width, self.height)
 
 class user_plane(plane):
     """This class is specifically for the user controlled plane"""
@@ -85,7 +85,6 @@ class enemy_plane(plane):
     def __init__(self, x, y, velocity):
         plane.__init__(self, x, y)
         self.velocity = velocity
-        self.visible = True
         self.image = pygame.transform.scale(self.image, (self.width, self.height)) # change plane size
         self.health = 5
         self.visible = True
@@ -136,6 +135,36 @@ class bullet(projectile):
 class bomb(projectile):
     """Class for bombs dropped by aircraft"""
     pass
+
+class tank(object):
+    """This class is for the tanks that enter in the second level"""
+
+    image = pygame.image.load("tank.jpg")
+
+    def __init__(self, x, y, facing):
+        self.x = x
+        self.y = y
+        self.facing = facing
+        self.width = 520
+        self.height = 365
+        self.hitbox = (self.x, self.y, self.width, self.height)
+        self.velocity = 3 * facing
+        self.image_left = pygame.transform.scale(self.image, (self.width, self.height))
+        self.image_right = pygame.transform.flip(win, True, False)
+        self.health = 5
+        self.visible = True
+        self.path = [self.x, screen_x//2]
+
+    def draw(self, win):
+        self.move()
+        win.blit(self.image, (self.x, self.y))
+        self.hitbox = (self.x, self.y, self.width, self.height)
+
+    def hit(self):
+        self.visible = False
+
+    def move(self):
+        
 
 def redraw_game_window(score):
     """This function redraws the game window between every frame"""
@@ -243,7 +272,15 @@ def produce_enemy():
         if random.randint(0, 50) == 25:
             enemy_bullets.append(bullet(round(enemy.x + enemy.width), round(enemy.y + enemy.height//2), -1))
 
-
+def set_up_variables():
+    global enemies, bullets, enemy_bullets, bullet_limit, enemy_timer, score, intromessage
+    enemies = []
+    bullets = []
+    enemy_bullets = []
+    bullet_limit = 0
+    enemy_timer = 50
+    score = 0
+    intromessage = True  
 
 pygame.init()
 screen_x = 2000
@@ -255,23 +292,17 @@ bg = pygame.image.load('inf_background.jpg')
 bg_width = bg.get_width()
 bg = pygame.transform.scale(bg, (bg_width, screen_y))
 bg_rect = bg.get_rect()
+font = pygame.font.SysFont('comicsans', 45) # set up text for game
 
 scroll = 0
 panels = math.ceil(screen_x / bg_width) + 2
 
-enemies = []
 main_plane = user_plane(100, 100, 10)
-bullets = []
-enemy_bullets = []
-bullet_limit = 0
-enemy_timer = 50
-run = True 
-score = 0
+set_up_variables()
 level1 = True
 level2 = True
 level3 = True
-intromessage = True  
-font = pygame.font.SysFont('comicsans', 45)
+run = True 
 
 # main loop
 while run:
@@ -301,17 +332,10 @@ while run:
         score = redraw_game_window(score)
 
     set_up_variables()
-    enemies = []
-    bullets = []
-    enemy_bullets = []
-    bullet_limit = 0
-    enemy_timer = 50
-    score = 0
     main_plane.x = 100
     main_plane.y = 100
     main_plane.health = 10
     main_plane.lives = 3
-    intromessage = True
 
     while level2 and run:
         run = every_level()
