@@ -118,12 +118,13 @@ class projectile(object):
 
 class bullet(projectile):
     """Class for bullets shot from airplanes and tanks"""
-    def __init__(self, x, y, direction=1, angle=1):
+    def __init__(self, x, y, direction=1, angle=0):
         projectile.__init__(self, x, y)
         self.direction = direction
         self.angle = angle
         self.radius = 6
         self.velocity = 15 * self.direction
+
 
     def is_hit(self, enemy):
         """This function determines if a particular bullet has hit a particular enemy plane"""
@@ -134,7 +135,9 @@ class bullet(projectile):
     def move(self):
         if self.x < screen_x and self.x > 0: # check bullet on screen
                 self.x += self.velocity # move the bullet
-                return True
+                if self.y < screen_y and self.y > 0:
+                    self.y -= self.velocity * self.angle
+                    return True
         else:
             return False
     
@@ -178,11 +181,14 @@ class tank(object):
                 self.x += self.velocity
             else:
                 self.velocity = self.velocity * -1
+                self.facing = -self.facing
         else:
             if self.x - self.velocity > self.path[0]:
                 self.x += self.velocity
             else:
                 self.velocity = self.velocity * -1
+                self.facing = -self.facing
+                
         
 def redraw_game_window(score):
     """This function redraws the game window between every frame"""
@@ -236,14 +242,14 @@ def message(mess, pos):
     global run, intromessage
     run = every_level()
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_SPACE]:
+    if keys[pygame.K_RETURN]:
         intromessage = False
     for i in range(panels):
         win.blit(bg, (i * bg_width - bg_width, 0))
         win.blit(bg, (0,0))
 
     text1 = font.render(mess, True, (0,0,0))
-    text2 = font.render("Press space to continue", True, (0,0,0))
+    text2 = font.render("Press enter to continue", True, (0,0,0))
     win.blit(text1, (pos, 350))
     win.blit(text2, (800, 450))
     pygame.display.update()
@@ -276,7 +282,7 @@ def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit):
     return bullet_limit
 
 def produce_enemy():
-    global enemy_timer, enemies, enemy_bullets, screen_x
+    global enemy_timer, enemies, enemy_bullets, screen_x, tank1
     enemy_timer -= 1
     if enemy_timer == 0:
         if len(enemies) < 10:
@@ -286,6 +292,15 @@ def produce_enemy():
     for enemy in enemies:
         if random.randint(0, 50) == 25:
             enemy_bullets.append(bullet(round(enemy.x + enemy.width), round(enemy.y + enemy.height//2), -1))
+
+    if random.randint(0,10) == 5:
+        try:
+            if tank1.facing == 1:
+                enemy_bullets.append(bullet(round(tank1.x + tank1.width), round(tank1.y), tank1.facing, tank1.facing*.3))
+            else:
+                enemy_bullets.append(bullet(round(tank1.x), round(tank1.y), tank1.facing, tank1.facing*.3))
+        except Exception:
+            pass
 
 def set_up_variables():
     global enemies, bullets, enemy_bullets, bullet_limit, enemy_timer, score, intromessage
@@ -356,7 +371,7 @@ while run:
     main_plane.y = 100
     main_plane.health = 10
     main_plane.lives = 3
-    tank1 = tank(-130, 700, -1)
+    tank1 = tank(-130, 700, 1)
 
     while level2 and run:
         run = every_level()
