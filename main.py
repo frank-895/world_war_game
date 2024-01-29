@@ -19,8 +19,6 @@ class user_plane(plane):
     image = pygame.image.load('user_plane.png') # upload main fighter
     heart = pygame.image.load('heart.png') # hearts for lives
     heart = pygame.transform.scale(heart, (30, 30))
-    explosion = pygame.image.load('explosion.png')
-    explosion = pygame.transform.scale(explosion , (300,300))
 
     def __init__(self, x, y, velocity):
         plane.__init__(self, x, y) # call superclass init method
@@ -119,10 +117,11 @@ class projectile(object):
         pygame.draw.circle(win, (0,0,0), (self.x, self.y), self.radius)
 
 class bullet(projectile):
-    """Class for bullets shot from aircraft"""
-    def __init__(self, x, y, direction=1):
+    """Class for bullets shot from airplanes and tanks"""
+    def __init__(self, x, y, direction=1, angle=1):
         projectile.__init__(self, x, y)
         self.direction = direction
+        self.angle = angle
         self.radius = 6
         self.velocity = 15 * self.direction
 
@@ -131,6 +130,13 @@ class bullet(projectile):
         if self.x > enemy.hitbox[0] and self.x < enemy.hitbox[0] + enemy.hitbox[2]:
             if self.y < enemy.hitbox[1] + enemy.hitbox[3] and self.y > enemy.hitbox[1]:
                 return True 
+            
+    def move(self):
+        if self.x < screen_x and self.x > 0: # check bullet on screen
+                self.x += self.velocity # move the bullet
+                return True
+        else:
+            return False
     
 class bomb(projectile):
     """Class for bombs dropped by aircraft"""
@@ -139,33 +145,45 @@ class bomb(projectile):
 class tank(object):
     """This class is for the tanks that enter in the second level"""
 
-    image = pygame.image.load("tank.jpg")
+    image = pygame.image.load("tank.png")
 
     def __init__(self, x, y, facing):
         self.x = x
         self.y = y
         self.facing = facing
-        self.width = 520
-        self.height = 365
+        self.width = 130
+        self.height = 80
         self.hitbox = (self.x, self.y, self.width, self.height)
         self.velocity = 3 * facing
         self.image_left = pygame.transform.scale(self.image, (self.width, self.height))
-        self.image_right = pygame.transform.flip(win, True, False)
+        self.image_right = pygame.transform.flip(self.image_left, True, False)
         self.health = 5
         self.visible = True
         self.path = [self.x, screen_x//2]
 
     def draw(self, win):
         self.move()
-        win.blit(self.image, (self.x, self.y))
+        if self.velocity > 0:
+            win.blit(self.image_right, (self.x, self.y))
+        else:
+            win.blit(self.image_left, (self.x, self.y))
         self.hitbox = (self.x, self.y, self.width, self.height)
 
     def hit(self):
         self.visible = False
 
     def move(self):
+        if self.velocity > 0:
+            if self.x + self.velocity < self.path[1]:
+                self.x += self.velocity
+            else:
+                self.velocity = self.velocity * -1
+        else:
+            if self.x - self.velocity > self.path[0]:
+                self.x += self.velocity
+            else:
+                self.velocity = self.velocity * -1
         
-
 def redraw_game_window(score):
     """This function redraws the game window between every frame"""
     global scroll
@@ -196,6 +214,11 @@ def redraw_game_window(score):
         if main_plane.is_hit(bullet):
             enemy_bullets.pop(enemy_bullets.index(bullet))
 
+    try:
+        tank1.draw(win)
+    except Exception:
+        pass
+
     pygame.display.update()
 
     return score
@@ -213,7 +236,7 @@ def message(mess, pos):
     global run, intromessage
     run = every_level()
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_w]:
+    if keys[pygame.K_SPACE]:
         intromessage = False
     for i in range(panels):
         win.blit(bg, (i * bg_width - bg_width, 0))
@@ -252,14 +275,6 @@ def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit):
 
     return bullet_limit
 
-def move_bullets(bullets):
-    for i in bullets:
-        if i.x < screen_x and i.x > 0: # cheeck bullet on screen
-            i.x += i.velocity # move the bullet
-        else:
-            bullets.pop(bullets.index(i))
-    return bullets
-
 def produce_enemy():
     global enemy_timer, enemies, enemy_bullets, screen_x
     enemy_timer -= 1
@@ -281,6 +296,7 @@ def set_up_variables():
     enemy_timer = 50
     score = 0
     intromessage = True  
+    
 
 pygame.init()
 screen_x = 2000
@@ -318,8 +334,12 @@ while run:
 
         main_plane.hit_ground() # check if plane has hit ground each time
         produce_enemy()
-        bullets = move_bullets(bullets)
-        enemy_bullets = move_bullets(enemy_bullets)
+        for i in bullets:
+            if i.move() == False:
+                bullets.pop(bullets.index(i))
+        for i in enemy_bullets:
+            if i.move() == False:
+                enemy_bullets.pop(enemy_bullets.index(i))
         bullet_limit = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit)
 
         if score == 2:
@@ -336,6 +356,7 @@ while run:
     main_plane.y = 100
     main_plane.health = 10
     main_plane.lives = 3
+    tank1 = tank(-130, 700, -1)
 
     while level2 and run:
         run = every_level()
@@ -346,8 +367,12 @@ while run:
 
         main_plane.hit_ground() # check if plane has hit ground each time
         produce_enemy()
-        bullets = move_bullets(bullets)
-        enemy_bullets = move_bullets(enemy_bullets)
+        for i in bullets:
+            if i.move() == False:
+                bullets.pop(bullets.index(i))
+        for i in enemy_bullets:
+            if i.move() == False:
+                enemy_bullets.pop(enemy_bullets.index(i))
         bullet_limit = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit)
 
         if score == 10:
