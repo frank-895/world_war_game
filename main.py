@@ -293,7 +293,16 @@ def redraw_game_window(score):
         pass
 
     try:
-        boss.draw(win)
+        if boss.visible:
+            boss.draw(win)
+            for i in bullets:
+                if i.is_hit(boss):
+                    print("activated")
+                    bullets.pop(bullets.index(i))
+                    boss.hit()
+                if boss.visible == False:
+                    pass
+                ### GAME OVER
     except Exception:
         pass
 
@@ -328,15 +337,7 @@ def message(mess, pos):
 
 def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit):
     global level1
-    if bullet_limit > 0:
-        bullet_limit += 1
-    if bullet_limit > 5:
-        bullet_limit = 0
-        
-    if bomb_limit > 0:
-        bomb_limit += 1
-    if bomb_limit > 20:
-        bomb_limit = 0
+
     # For left and right movement of user controlled plane
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT] and main_plane.x > 0:
@@ -363,7 +364,18 @@ def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, 
     return (bullet_limit, bomb_limit)
 
 def produce_enemy():
-    global enemy_timer, enemies, enemy_bullets, screen_x, tanks
+    global enemy_timer, enemies, enemy_bullets, screen_x, tanks, bullet_timer, bullet_limit, bomb_limit
+    
+    if bullet_limit > 0:
+        bullet_limit += 1
+    if bullet_limit > 5:
+        bullet_limit = 0
+        
+    if bomb_limit > 0:
+        bomb_limit += 1
+    if bomb_limit > 20:
+        bomb_limit = 0
+    
     enemy_timer -= 1
     if enemy_timer == 0:
         if len(enemies) < 10:
@@ -372,7 +384,7 @@ def produce_enemy():
 
     for enemy in enemies:
         if random.randint(0, 50) == 25:
-            enemy_bullets.append(bullet(round(enemy.x), round(enemy.y + enemy.height//2), -1))
+            enemy_bullets.append(bullet(round(enemy.x), round(enemy.y + enemy.height//2), -1))     
 
     if random.randint(0,10) == 5:
         try:
@@ -391,8 +403,7 @@ def set_up_variables():
     bomb_limit = 0
     enemy_timer = 50
     score = 0
-    intromessage = True  
-    
+    intromessage = True   
 
 pygame.init()
 screen_x = 2000
@@ -455,6 +466,7 @@ while run:
     main_plane.lives = 3
     tanks = [tank(-130, 700, 1), tank(2000, 700, -1)]
 
+    # THIS IS LEVEL 2
     while level2 and run:
         run = every_level()
 
@@ -491,7 +503,9 @@ while run:
     main_plane.lives = 3
     tanks = [tank(-130, 700, 1), tank(2000, 700, -1)]
     boss = blimp(2000, 300)
+    bullet_timer = 0 
 
+    # THIS IS LEVEL 3
     while level3 and run:
         run = every_level()
 
