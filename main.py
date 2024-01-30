@@ -207,6 +207,22 @@ class tank(object):
         else:
             enemy_bullets.append(bullet(round(self.x), round(self.y), self.facing, self.facing*.3))
                     
+class blimp(object):
+    """This class is for the boss in the final level"""
+
+    image = pygame.image.load('blimp.png')
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.width = 300
+        self.height = 100
+        self.hitbox = (self.x, self.y, self.width, self.height)
+        self.velocity = 1
+        self.image = pygame.transform.scale(self.image, (self.width, self.height))
+        self.health = 10
+        self.visible = True
+
 def redraw_game_window(score):
     """This function redraws the game window between every frame"""
     global scroll
@@ -401,6 +417,7 @@ while run:
         if main_plane.gameover == True:
             level1 = False
             level2 = False
+            level3
         
         score = redraw_game_window(score)
 
@@ -431,12 +448,47 @@ while run:
                 bombs.pop(bombs.index(i))
         (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
 
-        if score == 10:
-            level1 = False
+        if score == 5:
+            level2 = False
 
         if main_plane.gameover == True:
-            level1 = False
             level2 = False
+            level3 = False
+        
+        score = redraw_game_window(score)
+        
+    set_up_variables()
+    main_plane.x = 100
+    main_plane.y = 100
+    main_plane.health = 10
+    main_plane.lives = 3
+    tanks = [tank(-130, 700, 1), tank(2000, 700, -1)]
+
+    while level3 and run:
+        run = every_level()
+
+        # INTROMESSAGE
+        while intromessage and level3 and run:
+            message("Congratulations you made it to the next stage. Destroy both planes and tanks to continue to the next level. Good luck!",100)
+
+        main_plane.hit_ground() # check if plane has hit ground each time
+        produce_enemy()
+        for i in bullets:
+            if i.move() == False:
+                bullets.pop(bullets.index(i))
+        for i in enemy_bullets:
+            if i.move() == False:
+                enemy_bullets.pop(enemy_bullets.index(i))
+        for i in bombs:
+            if i.move() == False:
+                bombs.pop(bombs.index(i))
+        (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
+
+        if score == 5:
+            level3 = False
+
+        if main_plane.gameover == True:
+            level3 = False
         
         score = redraw_game_window(score)
     
