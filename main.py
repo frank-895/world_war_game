@@ -143,10 +143,21 @@ class bullet(projectile):
     
 class bomb(projectile):
     """Class for bombs dropped by aircraft"""
-    pass
+    def __init__(self, x, y):
+        projectile.__init__(self,x,y)
+        self.radius = 13
+        self.velocity = 20
+
+    def move(self):
+        if self.y < 700: # check bomb hasn't hit ground
+            self.y += self.velocity # move bomb downwards
+            return True
+        else:
+            return False
 
 class tank(object):
     """This class is for the tanks that enter in the second level"""
+    global enemy_bullets
 
     image = pygame.image.load("tank.png")
 
@@ -162,7 +173,10 @@ class tank(object):
         self.image_right = pygame.transform.flip(self.image_left, True, False)
         self.health = 5
         self.visible = True
-        self.path = [self.x, screen_x//2]
+        if self.facing == 1:
+            self.path = [self.x, screen_x//2]
+        else:
+            self.path = [screen_x//2, self.x]
 
     def draw(self, win):
         self.move()
@@ -188,6 +202,12 @@ class tank(object):
             else:
                 self.velocity = self.velocity * -1
                 self.facing = -self.facing
+    
+    def fire(self):
+        if self.facing == 1:
+            enemy_bullets.append(bullet(round(self.x + self.width), round(self.y), self.facing, self.facing*.3))
+        else:
+            enemy_bullets.append(bullet(round(self.x), round(self.y), self.facing, self.facing*.3))
                 
         
 def redraw_game_window(score):
@@ -219,9 +239,12 @@ def redraw_game_window(score):
         bullet.draw(win)
         if main_plane.is_hit(bullet):
             enemy_bullets.pop(enemy_bullets.index(bullet))
+    for i in bombs:
+        i.draw(win)
 
     try:
         tank1.draw(win)
+        tank2.draw(win)
     except Exception:
         pass
 
@@ -254,12 +277,17 @@ def message(mess, pos):
     win.blit(text2, (800, 450))
     pygame.display.update()
 
-def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit):
+def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit):
+    global level1
     if bullet_limit > 0:
         bullet_limit += 1
     if bullet_limit > 5:
         bullet_limit = 0
         
+    if bomb_limit > 0:
+        bomb_limit += 1
+    if bomb_limit > 20:
+        bomb_limit = 0
     # For left and right movement of user controlled plane
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT] and main_plane.x > 0:
@@ -279,10 +307,14 @@ def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit):
         bullets.append(bullet(round(main_plane.x + main_plane.width), round(main_plane.y + main_plane.height//2)))
         bullet_limit = 1
 
-    return bullet_limit
+    if keys[pygame.K_w] and bomb_limit == 0 and not level1:
+        bombs.append(bomb(round(main_plane.x + main_plane.width//2), round(main_plane.y + main_plane.height)))
+        bomb_limit = 1
+
+    return (bullet_limit, bomb_limit)
 
 def produce_enemy():
-    global enemy_timer, enemies, enemy_bullets, screen_x, tank1
+    global enemy_timer, enemies, enemy_bullets, screen_x, tank1, tank2
     enemy_timer -= 1
     if enemy_timer == 0:
         if len(enemies) < 10:
@@ -291,23 +323,23 @@ def produce_enemy():
 
     for enemy in enemies:
         if random.randint(0, 50) == 25:
-            enemy_bullets.append(bullet(round(enemy.x + enemy.width), round(enemy.y + enemy.height//2), -1))
+            enemy_bullets.append(bullet(round(enemy.x), round(enemy.y + enemy.height//2), -1))
 
     if random.randint(0,10) == 5:
         try:
-            if tank1.facing == 1:
-                enemy_bullets.append(bullet(round(tank1.x + tank1.width), round(tank1.y), tank1.facing, tank1.facing*.3))
-            else:
-                enemy_bullets.append(bullet(round(tank1.x), round(tank1.y), tank1.facing, tank1.facing*.3))
+            tank1.fire()
+            tank2.fire()
         except Exception:
             pass
 
 def set_up_variables():
-    global enemies, bullets, enemy_bullets, bullet_limit, enemy_timer, score, intromessage
+    global enemies, bullets, enemy_bullets, bullet_limit, enemy_timer, score, intromessage, bombs, bomb_limit
     enemies = []
     bullets = []
+    bombs = []
     enemy_bullets = []
     bullet_limit = 0
+    bomb_limit = 0
     enemy_timer = 50
     score = 0
     intromessage = True  
@@ -355,7 +387,7 @@ while run:
         for i in enemy_bullets:
             if i.move() == False:
                 enemy_bullets.pop(enemy_bullets.index(i))
-        bullet_limit = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit)
+        (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
 
         if score == 2:
             level1 = False
@@ -372,6 +404,7 @@ while run:
     main_plane.health = 10
     main_plane.lives = 3
     tank1 = tank(-130, 700, 1)
+    tank2 = tank(2000, 700, -1)
 
     while level2 and run:
         run = every_level()
@@ -388,7 +421,10 @@ while run:
         for i in enemy_bullets:
             if i.move() == False:
                 enemy_bullets.pop(enemy_bullets.index(i))
-        bullet_limit = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit)
+        for i in bombs:
+            if i.move() == False:
+                bombs.pop(bombs.index(i))
+        (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
 
         if score == 10:
             level1 = False
