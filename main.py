@@ -90,7 +90,7 @@ class enemy_plane(plane):
     def draw(self, win):
         self.move()
         win.blit(self.image, (self.x, self.y))
-        self.hitbox = (self.x, self.y, 150, 52)
+        self.hitbox = (self.x, self.y, self.width, self.height)
         pygame.draw.rect(win, (255,0,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2], 10)) # health bar
         pygame.draw.rect(win, (0,128,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2] - ((self.hitbox[2]/5) * (5 - self.health)), 10)) 
 
@@ -215,13 +215,35 @@ class blimp(object):
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.width = 300
-        self.height = 100
+        self.width = 600
+        self.height = 200
         self.hitbox = (self.x, self.y, self.width, self.height)
-        self.velocity = 1
+        self.velocity = 10
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
         self.health = 10
         self.visible = True
+
+    def draw(self, win):
+        self.move()
+        win.blit(self.image, (self.x, self.y))
+        self.hitbox = (self.x, self.y, self.width, self.height)
+        pygame.draw.rect(win, (255,0,0), (self.hitbox[0], self.hitbox[1] - 15, self.width, 10)) # health bar
+        pygame.draw.rect(win, (0,128,0), (self.hitbox[0], self.hitbox[1] - 15, self.width - ((self.width/10) * (10 - self.health)), 10)) 
+        if self.x < screen_x - self.width:
+            self.velocity = 1
+
+    def hit(self):
+        if self.health > 1:
+            self.health -= 1
+        else:
+            self.visible = False
+    
+    def move(self):
+        if self.x > -self.width:
+            self.x -= self.velocity
+        else:
+            self.visible = False
+            pass # the blimp has made it to the edge of the screen - hence game over.
 
 def redraw_game_window(score):
     """This function redraws the game window between every frame"""
@@ -267,6 +289,11 @@ def redraw_game_window(score):
                 else: 
                     i.x = -i.width
                 i.visible = True
+    except Exception:
+        pass
+
+    try:
+        boss.draw(win)
     except Exception:
         pass
 
@@ -411,13 +438,13 @@ while run:
                 enemy_bullets.pop(enemy_bullets.index(i))
         (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
 
-        if score == 2:
+        if score == 1:
             level1 = False
 
         if main_plane.gameover == True:
             level1 = False
             level2 = False
-            level3
+            level3 = False
         
         score = redraw_game_window(score)
 
@@ -448,7 +475,7 @@ while run:
                 bombs.pop(bombs.index(i))
         (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
 
-        if score == 5:
+        if score == 1:
             level2 = False
 
         if main_plane.gameover == True:
@@ -463,6 +490,7 @@ while run:
     main_plane.health = 10
     main_plane.lives = 3
     tanks = [tank(-130, 700, 1), tank(2000, 700, -1)]
+    boss = blimp(2000, 300)
 
     while level3 and run:
         run = every_level()
@@ -484,7 +512,7 @@ while run:
                 bombs.pop(bombs.index(i))
         (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
 
-        if score == 5:
+        if score == 1:
             level3 = False
 
         if main_plane.gameover == True:
