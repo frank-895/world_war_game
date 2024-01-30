@@ -116,6 +116,12 @@ class projectile(object):
     def draw(self, win):
         pygame.draw.circle(win, (0,0,0), (self.x, self.y), self.radius)
 
+    def is_hit(self, enemy):
+        """This function determines if a particular bullet has hit a particular enemy"""
+        if self.x > enemy.hitbox[0] and self.x < enemy.hitbox[0] + enemy.hitbox[2]:
+            if self.y < enemy.hitbox[1] + enemy.hitbox[3] and self.y > enemy.hitbox[1]:
+                return True 
+
 class bullet(projectile):
     """Class for bullets shot from airplanes and tanks"""
     def __init__(self, x, y, direction=1, angle=0):
@@ -124,13 +130,6 @@ class bullet(projectile):
         self.angle = angle
         self.radius = 6
         self.velocity = 15 * self.direction
-
-
-    def is_hit(self, enemy):
-        """This function determines if a particular bullet has hit a particular enemy plane"""
-        if self.x > enemy.hitbox[0] and self.x < enemy.hitbox[0] + enemy.hitbox[2]:
-            if self.y < enemy.hitbox[1] + enemy.hitbox[3] and self.y > enemy.hitbox[1]:
-                return True 
             
     def move(self):
         if self.x < screen_x and self.x > 0: # check bullet on screen
@@ -171,7 +170,6 @@ class tank(object):
         self.velocity = 3 * facing
         self.image_left = pygame.transform.scale(self.image, (self.width, self.height))
         self.image_right = pygame.transform.flip(self.image_left, True, False)
-        self.health = 5
         self.visible = True
         if self.facing == 1:
             self.path = [self.x, screen_x//2]
@@ -208,8 +206,7 @@ class tank(object):
             enemy_bullets.append(bullet(round(self.x + self.width), round(self.y), self.facing, self.facing*.3))
         else:
             enemy_bullets.append(bullet(round(self.x), round(self.y), self.facing, self.facing*.3))
-                
-        
+                    
 def redraw_game_window(score):
     """This function redraws the game window between every frame"""
     global scroll
@@ -231,8 +228,7 @@ def redraw_game_window(score):
                 enemy.hit()
         if enemy.visible == False:
             enemies.pop(enemies.index(enemy))
-            score += 1
-    
+            score += 1    
     for bullet in bullets:
         bullet.draw(win)
     for bullet in enemy_bullets:
@@ -243,8 +239,14 @@ def redraw_game_window(score):
         i.draw(win)
 
     try:
-        tank1.draw(win)
-        tank2.draw(win)
+        for i in tanks:
+            i.draw(win)
+            for j in bombs:
+                if j.is_hit(i):
+                    bombs.pop(bombs.index(j))
+                    i.hit()
+            if i.visible == False:
+                tanks.pop(tanks.index(i)) 
     except Exception:
         pass
 
@@ -314,7 +316,7 @@ def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, 
     return (bullet_limit, bomb_limit)
 
 def produce_enemy():
-    global enemy_timer, enemies, enemy_bullets, screen_x, tank1, tank2
+    global enemy_timer, enemies, enemy_bullets, screen_x, tanks
     enemy_timer -= 1
     if enemy_timer == 0:
         if len(enemies) < 10:
@@ -327,8 +329,8 @@ def produce_enemy():
 
     if random.randint(0,10) == 5:
         try:
-            tank1.fire()
-            tank2.fire()
+            for i in tanks:
+                i.fire()
         except Exception:
             pass
 
@@ -403,8 +405,7 @@ while run:
     main_plane.y = 100
     main_plane.health = 10
     main_plane.lives = 3
-    tank1 = tank(-130, 700, 1)
-    tank2 = tank(2000, 700, -1)
+    tanks = [tank(-130, 700, 1), tank(2000, 700, -1)]
 
     while level2 and run:
         run = every_level()
