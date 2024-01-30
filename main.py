@@ -246,7 +246,11 @@ def redraw_game_window(score):
                     bombs.pop(bombs.index(j))
                     i.hit()
             if i.visible == False:
-                tanks.pop(tanks.index(i)) 
+                if i.x > screen_x//2:
+                    i.x = screen_x + i.width
+                else: 
+                    i.x = -i.width
+                i.visible = True
     except Exception:
         pass
 
