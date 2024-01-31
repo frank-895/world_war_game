@@ -1,7 +1,6 @@
 import pygame
 import math
 import random
-from pygame import font
 
 class plane(object):
     """This class is for all of the planes in the game"""
@@ -245,6 +244,54 @@ class blimp(object):
             self.visible = False
             pass # the blimp has made it to the edge of the screen - hence game over.
 
+class message(object):
+    """This class is for any messages that will appear on the screen"""
+
+    def __init__(self):
+        self.width = 1200
+        self.height = 700
+        self.button_height = 200
+        self.button_width = 210
+        self.home = pygame.transform.scale(pygame.image.load('home.JPG'), (self.width, self.height))
+        self.home_play = pygame.transform.scale(pygame.image.load('home_play_hover.JPG'), (self.width, self.height))
+        self.home_exit = pygame.transform.scale(pygame.image.load('home_exit_hover.JPG'), (self.width, self.height))
+        self.level2 = pygame.transform.scale(pygame.image.load('level2.JPG'), (self.width, self.height))
+        self.level2_play = pygame.transform.scale(pygame.image.load('level2_play_hover.JPG'), (self.width, self.height))
+        self.level2_exit = pygame.transform.scale(pygame.image.load('level2_exit_hover.JPG'), (self.width, self.height))
+        self.level3 = pygame.transform.scale(pygame.image.load('level3.JPG'), (self.width, self.height))
+        self.level3_play = pygame.transform.scale(pygame.image.load('level3_play_hover.JPG'), (self.width, self.height))
+        self.level3_exit = pygame.transform.scale(pygame.image.load('level3_exit_hover.JPG'), (self.width, self.height))
+        self.lost = pygame.transform.scale(pygame.image.load('lost.JPG'), (self.width, self.height))
+        self.lost_play = pygame.transform.scale(pygame.image.load('lost_play_hover.JPG'), (self.width, self.height))
+        self.lost_exit = pygame.transform.scale(pygame.image.load('lost_exit_hover.JPG'), (self.width, self.height))
+        self.won = pygame.transform.scale(pygame.image.load('won.JPG'), (self.width, self.height))
+        self.won_play = pygame.transform.scale(pygame.image.load('won_play_hover.JPG'), (self.width, self.height))
+        self.won_exit = pygame.transform.scale(pygame.image.load('won_exit_hover.JPG'), (self.width, self.height))
+        self.left_button_box = (450, 260, self.button_width, self.button_height)
+        self.right_button_box = (1340, 260, self.button_width, self.button_height)
+
+    def screen_message(self, win, image, image_left_hover, image_right_hover):
+        global run
+        (x,y) = pygame.mouse.get_pos()
+
+        if x > self.left_button_box[0] and x < self.left_button_box[0] + self.left_button_box[2] and y < self.left_button_box[1] + self.left_button_box[3] and y > self.left_button_box[3]:
+            win.blit(image_left_hover, (400,50))
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    return False
+                
+        elif x > self.right_button_box[0] and x < self.right_button_box[0] + self.right_button_box[2] and y < self.right_button_box[1] + self.right_button_box[3] and y > self.right_button_box[3]:
+            win.blit(image_right_hover, (400,50))
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    run = False
+
+        else:
+            win.blit(image, (400, 50))
+
+        pygame.display.update()
+        return True
+
 def redraw_game_window(score):
     """This function redraws the game window between every frame"""
     global scroll
@@ -297,7 +344,6 @@ def redraw_game_window(score):
             boss.draw(win)
             for i in bullets:
                 if i.is_hit(boss):
-                    print("activated")
                     bullets.pop(bullets.index(i))
                     boss.hit()
                 if boss.visible == False:
@@ -316,24 +362,7 @@ def every_level():
     for event in pygame.event.get(): # check for event
         if event.type == pygame.QUIT: # if user closes window
             return False
-    return True
-
-def message(mess, pos):
-    """This function is welcome message for each level"""
-    global run, intromessage
-    run = every_level()
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_RETURN]:
-        intromessage = False
-    for i in range(panels):
-        win.blit(bg, (i * bg_width - bg_width, 0))
-        win.blit(bg, (0,0))
-
-    text1 = font.render(mess, True, (0,0,0))
-    text2 = font.render("Press enter to continue", True, (0,0,0))
-    win.blit(text1, (pos, 350))
-    win.blit(text2, (800, 450))
-    pygame.display.update()
+    return True   
 
 def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit):
     global level1
@@ -403,7 +432,6 @@ def set_up_variables():
     bomb_limit = 0
     enemy_timer = 50
     score = 0
-    intromessage = True   
 
 pygame.init()
 screen_x = 2000
@@ -425,7 +453,9 @@ set_up_variables()
 level1 = True
 level2 = True
 level3 = True
+intromessage = True
 run = True 
+message_obj = message()
 
 # main loop
 while run:
@@ -435,12 +465,20 @@ while run:
     while level1 and run: 
         run = every_level()  
 
-        # INTROMESSAGE
+        # INTROMESSAGE        
         while intromessage and level1 and run:
-            message("You are defending your airspace alone. You must destroy 10 planes to continue to the next level! Don't let any planes get past!",50)
+            run = every_level()
+
+            for i in range(panels):
+                win.blit(bg, (i * bg_width - bg_width, 0))
+                win.blit(bg, (0,0))
+
+            intromessage = message_obj.screen_message(win, message_obj.home, message_obj.home_play, message_obj.home_exit)
+            pygame.display.update()
 
         main_plane.hit_ground() # check if plane has hit ground each time
         produce_enemy()
+
         for i in bullets:
             if i.move() == False:
                 bullets.pop(bullets.index(i))
@@ -460,6 +498,7 @@ while run:
         score = redraw_game_window(score)
 
     set_up_variables()
+    intromessage = True
     main_plane.x = 100
     main_plane.y = 100
     main_plane.health = 10
@@ -472,7 +511,14 @@ while run:
 
         # INTROMESSAGE
         while intromessage and level2 and run:
-            message("Congratulations you made it to the next stage. Destroy both planes and tanks to continue to the next level. Good luck!",100)
+            run = every_level()
+
+            for i in range(panels):
+                win.blit(bg, (i * bg_width - bg_width, 0))
+                win.blit(bg, (0,0))
+
+            intromessage = message_obj.screen_message(win, message_obj.level2, message_obj.level2_play, message_obj.level2_exit)
+            pygame.display.update()
 
         main_plane.hit_ground() # check if plane has hit ground each time
         produce_enemy()
@@ -497,6 +543,7 @@ while run:
         score = redraw_game_window(score)
         
     set_up_variables()
+    intromessage = True
     main_plane.x = 100
     main_plane.y = 100
     main_plane.health = 10
@@ -511,7 +558,14 @@ while run:
 
         # INTROMESSAGE
         while intromessage and level3 and run:
-            message("Congratulations you made it to the next stage. Destroy both planes and tanks to continue to the next level. Good luck!",100)
+            run = every_level()
+
+            for i in range(panels):
+                win.blit(bg, (i * bg_width - bg_width, 0))
+                win.blit(bg, (0,0))
+
+            intromessage = message_obj.screen_message(win, message_obj.level3, message_obj.level3_play, message_obj.level3_exit)
+            pygame.display.update()
 
         main_plane.hit_ground() # check if plane has hit ground each time
         produce_enemy()
@@ -533,7 +587,44 @@ while run:
             level3 = False
         
         score = redraw_game_window(score)
-    
-    run = False
+
+    if main_plane.gameover == True:
+        intromessage = True
+        while intromessage and run:
+            run = every_level()
+
+            for i in range(panels):
+                win.blit(bg, (i * bg_width - bg_width, 0))
+                win.blit(bg, (0,0))
+
+            intromessage = message_obj.screen_message(win, message_obj.lost, message_obj.lost_play, message_obj.lost_exit)
+            pygame.display.update()
+
+    else:
+        intromessage = True
+        while intromessage and run:
+            run = every_level()
+
+            for i in range(panels):
+                win.blit(bg, (i * bg_width - bg_width, 0))
+                win.blit(bg, (0,0))
+
+            intromessage = message_obj.screen_message(win, message_obj.won, message_obj.won_play, message_obj.won_exit)
+            pygame.display.update()
+
+    if intromessage == False:
+        main_plane.x = 100
+        main_plane.y = 100
+        main_plane.health = 10
+        main_plane.lives = 3
+        main_plane.gameover = False
+        set_up_variables()
+        level1 = True
+        level2 = True
+        level3 = True
+        run = True 
+        message_obj = message()
+        tanks = []
+        boss = []
 
 pygame.quit() # closes program once broken out of while loop
