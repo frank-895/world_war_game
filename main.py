@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+import time
 
 class plane(object):
     """This class is for all of the planes in the game"""
@@ -77,6 +78,7 @@ class user_plane(plane):
 class enemy_plane(plane):
     """This class is for enemy planes"""
     
+    global run
     image = pygame.image.load('enemy_plane.png')
     
     def __init__(self, x, y, velocity):
@@ -104,7 +106,8 @@ class enemy_plane(plane):
             self.x -= self.velocity
         else:
             self.visible = False
-            pass # the plane must have made it to the edge of screen - hence game over.
+            main_plane.gameover = True
+            run = False
 
 class projectile(object):
     """Class for all projectiles"""
@@ -208,7 +211,8 @@ class tank(object):
                     
 class blimp(object):
     """This class is for the boss in the final level"""
-
+    
+    global run
     image = pygame.image.load('blimp.png')
 
     def __init__(self, x, y):
@@ -219,7 +223,8 @@ class blimp(object):
         self.hitbox = (self.x, self.y, self.width, self.height)
         self.velocity = 10
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
-        self.health = 10
+        self.initial_health = 50
+        self.health = self.initial_health
         self.visible = True
 
     def draw(self, win):
@@ -227,9 +232,9 @@ class blimp(object):
         win.blit(self.image, (self.x, self.y))
         self.hitbox = (self.x, self.y, self.width, self.height)
         pygame.draw.rect(win, (255,0,0), (self.hitbox[0], self.hitbox[1] - 15, self.width, 10)) # health bar
-        pygame.draw.rect(win, (0,128,0), (self.hitbox[0], self.hitbox[1] - 15, self.width - ((self.width/10) * (10 - self.health)), 10)) 
+        pygame.draw.rect(win, (0,128,0), (self.hitbox[0], self.hitbox[1] - 15, self.width - ((self.width/self.initial_health) * (self.initial_health - self.health)), 10)) 
         if self.x < screen_x - self.width:
-            self.velocity = 1
+            self.velocity = 0.5
 
     def hit(self):
         if self.health > 1:
@@ -242,7 +247,13 @@ class blimp(object):
             self.x -= self.velocity
         else:
             self.visible = False
-            pass # the blimp has made it to the edge of the screen - hence game over.
+            run = False
+            main_plane.gameover = True
+    
+    def fire(self):            
+        enemy_bullets.append(bullet(round(self.x), round(self.y + self.height//2), -1, 0))
+        enemy_bullets.append(bullet(round(self.x), round(self.y + self.height//2), -1, .3))
+        enemy_bullets.append(bullet(round(self.x), round(self.y + self.height//2), -1, -.3))
 
 class message(object):
     """This class is for any messages that will appear on the screen"""
@@ -396,7 +407,7 @@ def user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, 
     return (bullet_limit, bomb_limit)
 
 def produce_enemy():
-    global enemy_timer, enemies, enemy_bullets, screen_x, tanks, bullet_timer, bullet_limit, bomb_limit
+    global enemy_timer, enemies, enemy_bullets, screen_x, tanks, bullet_timer, bullet_limit, bomb_limit, boss_cooldown, stop
     
     if bullet_limit > 0:
         bullet_limit += 1
@@ -407,6 +418,14 @@ def produce_enemy():
         bomb_limit += 1
     if bomb_limit > 20:
         bomb_limit = 0
+
+    boss_cooldown += 1
+    if boss_cooldown > 2:
+        boss_cooldown = 0
+
+    stop += 1
+    if stop > 60:
+        stop = 0
     
     enemy_timer -= 1
     if enemy_timer == 0:
@@ -431,8 +450,14 @@ def produce_enemy():
         except Exception:
             pass
 
+    if boss_cooldown and stop < 30:
+        try:
+            boss.fire()
+        except Exception:
+            pass
+
 def set_up_variables():
-    global enemies, bullets, enemy_bullets, bullet_limit, enemy_timer, score, intromessage, bombs, bomb_limit
+    global enemies, bullets, enemy_bullets, bullet_limit, enemy_timer, score, intromessage, bombs, bomb_limit, boss_cooldown, stop
     enemies = []
     bullets = []
     bombs = []
@@ -441,6 +466,8 @@ def set_up_variables():
     bomb_limit = 0
     enemy_timer = 50
     score = 0
+    boss_cooldown = 0
+    stop = 0
 
 pygame.init()
 screen_x = 2000
@@ -496,7 +523,7 @@ while run:
                 enemy_bullets.pop(enemy_bullets.index(i))
         (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
 
-        if score == 10:
+        if score == 2:
             level1 = False
 
         if main_plane.gameover == True:
@@ -542,7 +569,7 @@ while run:
                 bombs.pop(bombs.index(i))
         (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
 
-        if score == 10:
+        if score == 2:
             level2 = False
 
         if main_plane.gameover == True:
