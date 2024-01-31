@@ -301,6 +301,9 @@ def redraw_game_window(score):
     if abs(scroll) > bg_width:
         scroll = 0
 
+    text = font.render('Score: ' + str(score), 1, (0,0,0))
+    win.blit(text, (50,50))
+
     if main_plane.visible:
         main_plane.draw(win)
     
@@ -331,6 +334,7 @@ def redraw_game_window(score):
                     bombs.pop(bombs.index(j))
                     i.hit()
             if i.visible == False:
+                score += 1
                 if i.x > screen_x//2:
                     i.x = screen_x + i.width
                 else: 
@@ -347,8 +351,7 @@ def redraw_game_window(score):
                     bullets.pop(bullets.index(i))
                     boss.hit()
                 if boss.visible == False:
-                    pass
-                ### GAME OVER
+                    score = 1 # Game Over
     except Exception:
         pass
 
@@ -408,7 +411,13 @@ def produce_enemy():
     enemy_timer -= 1
     if enemy_timer == 0:
         if len(enemies) < 10:
-            enemies.append(enemy_plane(screen_x, random.randint(50, 600), 3))
+            if level2 == True:
+                enemies.append(enemy_plane(screen_x, random.randint(50, 600), 3))
+            else:
+                temp = random.randint(50,600)
+                while temp > 300 and temp < 500:
+                    temp = random.randint(50,600)
+                enemies.append(enemy_plane(screen_x, temp, 3))
         enemy_timer = 50
 
     for enemy in enemies:
@@ -487,7 +496,7 @@ while run:
                 enemy_bullets.pop(enemy_bullets.index(i))
         (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
 
-        if score == 1:
+        if score == 10:
             level1 = False
 
         if main_plane.gameover == True:
@@ -533,7 +542,7 @@ while run:
                 bombs.pop(bombs.index(i))
         (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
 
-        if score == 1:
+        if score == 10:
             level2 = False
 
         if main_plane.gameover == True:
@@ -580,7 +589,7 @@ while run:
                 bombs.pop(bombs.index(i))
         (bullet_limit, bomb_limit) = user_movement(main_plane, screen_x, screen_y, bullets, bullet_limit, bombs, bomb_limit)
 
-        if score == 1:
+        if score == 100 or boss.visible == False:
             level3 = False
 
         if main_plane.gameover == True:
@@ -599,7 +608,6 @@ while run:
 
             intromessage = message_obj.screen_message(win, message_obj.lost, message_obj.lost_play, message_obj.lost_exit)
             pygame.display.update()
-
     else:
         intromessage = True
         while intromessage and run:
