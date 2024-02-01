@@ -1,7 +1,6 @@
 import pygame
 import math
 import random
-import time
 
 class plane(object):
     """This class is for all of the planes in the game"""
@@ -30,24 +29,27 @@ class user_plane(plane):
         self.visible = True
         self.gameover = False
 
-    def draw(self, win):
+    def draw(self, win, is_shield):
         win.blit(self.image, (self.x, self.y))
         self.hitbox = (self.x, self.y, 150, 52)
         pygame.draw.rect(win, (255,0,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2], 10)) # health bar
         pygame.draw.rect(win, (0,128,0), (self.hitbox[0], self.hitbox[1] - 15, self.hitbox[2] - ((self.hitbox[2]/10) * (10 - self.health)), 10))
         for i in range(self.lives):
             win.blit(self.heart, (screen_x - 50 - i * 50, 10)) 
+        if is_shield:
+            pygame.draw.ellipse(win, (0,0,255), (self.x, self.y, self.width, self.height), 2)
 
     def is_hit(self, bullet):
         """This function determines if the user controlled plane has been hit by a bullet. It removes health and lives if necessary and returns True if user plane is hit"""
         if bullet.x > self.hitbox[0] and bullet.x < self.hitbox[0] + self.hitbox[2]:
             if bullet.y < self.hitbox[1] + self.hitbox[3] and bullet.y > self.hitbox[1]:
-                self.health -= 1
+                if not is_shield:
+                    self.health -= 1
                 if self.health == 0:
                     self.lost_life()
                     if self.lives == 0:
                         self.no_lives(win)
-                return True 
+            return True 
             
     def is_collide(self, enemy):
         """This method determines if the user controlled plane has collided with an enemy plane or the ground"""
@@ -303,9 +305,59 @@ class message(object):
         pygame.display.update()
         return True
 
+class collectible(object):
+    """For user special abilities"""
+    def __init__(self, x, y):
+        self.radius = 30
+        self.width = 30
+        self.height = 30
+        self.x = x
+        self.y = y
+        self.hitbox = (self.x - self.radius, self.y - self.radius, self.radius * 2, self.radius * 2)
+        self.visible = True
+
+    def draw(self, icon, win):
+        pygame.draw.circle(win, (0,0,0), (self.x, self.y), self.radius, 2)
+        win.blit(icon, (self.x - 15, self.y - 15))
+        if self.is_collected():
+            if self.activate(win):
+                return True
+
+    def is_collected(self):
+        """This function determines if the collectible has been collected"""
+        if self.hitbox[0] < main_plane.hitbox[0] + main_plane.hitbox[2]:
+            if self.hitbox[0] + self.hitbox[2] > main_plane.hitbox[0]:
+                if self.hitbox[1] < main_plane.hitbox[1] + main_plane.hitbox[3]:
+                    if self.hitbox[1] + self.hitbox[3] > main_plane.hitbox[1]:
+                        self.visible = False
+                        return True
+                
+
+class extra_life(collectible):
+
+    heart = pygame.image.load('heart.png') # hearts for lives
+
+    def __init__(self, x, y):
+        collectible.__init__(self, x, y)
+        self.icon = pygame.transform.scale(self.heart, (self.width, self.height))
+    
+    def activate(self, win):
+        main_plane.lives += 1
+
+class shield(collectible):
+    
+    shield = pygame.image.load("sheild.png") # load in image for icon
+
+    def __init__(self, x, y):
+        collectible.__init__(self, x, y)
+        self.icon = pygame.transform.scale(self.shield, (self.width, self.height))
+
+    def activate(self, win):
+        return True
+
 def redraw_game_window(score):
     """This function redraws the game window between every frame"""
-    global scroll
+    global scroll, is_shield
     for i in range(panels):
         win.blit(bg, (i * bg_width + scroll - bg_width, 0))
     scroll -= 5
@@ -316,7 +368,7 @@ def redraw_game_window(score):
     win.blit(text, (50,50))
 
     if main_plane.visible:
-        main_plane.draw(win)
+        main_plane.draw(win, is_shield)
     
     for enemy in enemies:
         enemy.draw(win)
@@ -366,6 +418,12 @@ def redraw_game_window(score):
     except Exception:
         pass
 
+    for i in collectibles:
+        if i.draw(i.icon, win):
+            is_shield = True
+        if not i.visible:
+            collectibles.pop(collectibles.index(i))
+    
     pygame.display.update()
 
     return score
@@ -457,17 +515,19 @@ def produce_enemy():
             pass
 
 def set_up_variables():
-    global enemies, bullets, enemy_bullets, bullet_limit, enemy_timer, score, intromessage, bombs, bomb_limit, boss_cooldown, stop
+    global enemies, bullets, enemy_bullets, bullet_limit, enemy_timer, score, intromessage, bombs, bomb_limit, boss_cooldown, stop, collectibles, is_shield
     enemies = []
     bullets = []
     bombs = []
     enemy_bullets = []
+    collectibles = []
     bullet_limit = 0
     bomb_limit = 0
     enemy_timer = 50
     score = 0
     boss_cooldown = 0
     stop = 0
+    is_shield = False
 
 pygame.init()
 screen_x = 2000
@@ -492,6 +552,7 @@ level3 = True
 intromessage = True
 run = True 
 message_obj = message()
+collectibles = [shield(400,100)]
 
 # main loop
 while run:
