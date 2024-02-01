@@ -49,7 +49,7 @@ class user_plane(plane):
                     self.lost_life()
                     if self.lives == 0:
                         self.no_lives(win)
-            return True 
+                return True 
             
     def is_collide(self, enemy):
         """This method determines if the user controlled plane has collided with an enemy plane or the ground"""
@@ -332,7 +332,6 @@ class collectible(object):
                         self.visible = False
                         return True
                 
-
 class extra_life(collectible):
 
     heart = pygame.image.load('heart.png') # hearts for lives
@@ -345,7 +344,6 @@ class extra_life(collectible):
         main_plane.lives += 1
 
 class shield(collectible):
-    
     shield = pygame.image.load("sheild.png") # load in image for icon
 
     def __init__(self, x, y):
@@ -353,11 +351,26 @@ class shield(collectible):
         self.icon = pygame.transform.scale(self.shield, (self.width, self.height))
 
     def activate(self, win):
-        return True
+        global is_shield, counter  
+        is_shield = True
+        counter = 0
+
+class rapid_fire(collectible):
+    
+    bullet_icon = pygame.image.load('bullet.png')
+
+    def __init__(self, x, y):
+        collectible.__init__(self, x, y)
+        self.icon = pygame.transform.scale(self.bullet_icon, (self.width, self.height))
+
+    def activate(self, win):
+        global is_rapid_fire, counter
+        is_rapid_fire = True
+        counter = 0
 
 def redraw_game_window(score):
     """This function redraws the game window between every frame"""
-    global scroll, is_shield
+    global scroll, is_shield, counter, is_rapid_fire
     for i in range(panels):
         win.blit(bg, (i * bg_width + scroll - bg_width, 0))
     scroll -= 5
@@ -419,10 +432,14 @@ def redraw_game_window(score):
         pass
 
     for i in collectibles:
-        if i.draw(i.icon, win):
-            is_shield = True
+        i.draw(i.icon, win)
         if not i.visible:
             collectibles.pop(collectibles.index(i))
+    if is_shield or is_rapid_fire:
+        counter += 1
+    if counter == 500:
+        is_shield = False
+        is_rapid_fire = False
     
     pygame.display.update()
 
@@ -469,7 +486,7 @@ def produce_enemy():
     
     if bullet_limit > 0:
         bullet_limit += 1
-    if bullet_limit > 5:
+    if bullet_limit > 5 or (bullet_limit > 3 and is_rapid_fire):
         bullet_limit = 0
         
     if bomb_limit > 0:
@@ -515,7 +532,7 @@ def produce_enemy():
             pass
 
 def set_up_variables():
-    global enemies, bullets, enemy_bullets, bullet_limit, enemy_timer, score, intromessage, bombs, bomb_limit, boss_cooldown, stop, collectibles, is_shield
+    global enemies, bullets, enemy_bullets, bullet_limit, enemy_timer, score, intromessage, bombs, bomb_limit, boss_cooldown, stop, collectibles, is_shield, is_rapid_fire, counter
     enemies = []
     bullets = []
     bombs = []
@@ -528,6 +545,8 @@ def set_up_variables():
     boss_cooldown = 0
     stop = 0
     is_shield = False
+    is_rapid_fire = False
+    counter = 0
 
 pygame.init()
 screen_x = 2000
@@ -552,7 +571,7 @@ level3 = True
 intromessage = True
 run = True 
 message_obj = message()
-collectibles = [shield(400,100)]
+collectibles = [rapid_fire(400,100)]
 
 # main loop
 while run:
