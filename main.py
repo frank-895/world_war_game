@@ -301,21 +301,23 @@ class message(object):
         self.won_play = pygame.transform.scale(pygame.image.load('won_play_hover.JPG'), (self.width, self.height))
         self.won_exit = pygame.transform.scale(pygame.image.load('won_exit_hover.JPG'), (self.width, self.height))
         
-
+    
     def screen_message(self, win, image, image_left_hover, image_right_hover):
         """Method displays particular message on screen"""
+
+        events = pygame.event.get() # to see if user presses the mouse down
         global run # to break out of main loop if user presses exit
         (x,y) = pygame.mouse.get_pos() # x and y coordinate of cursor 
 
         if x > self.left_button_box[0] and x < self.left_button_box[0] + self.left_button_box[2] and y < self.left_button_box[1] + self.left_button_box[3] and y > self.left_button_box[3]: # check if cursor in button hitbox
             win.blit(image_left_hover, (400,50)) # blit button hover image 
-            for event in pygame.event.get():
+            for event in events:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     return False # if play button pressed break out of message loop
                 
         elif x > self.right_button_box[0] and x < self.right_button_box[0] + self.right_button_box[2] and y < self.right_button_box[1] + self.right_button_box[3] and y > self.right_button_box[3]: # check if cursor in button hitbox
             win.blit(image_right_hover, (400,50)) # blit button hover image 
-            for event in pygame.event.get():
+            for event in events:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     run = False # if exit button pressed break out of main loop
 
